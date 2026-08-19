@@ -13,6 +13,18 @@ export function createApp(blockchain: Blockchain = new Blockchain()): Express {
 
   app.use(express.json());
 
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'Fair Trade Coffee Ledger',
+      description: 'Proof-of-Work blockchain ledger for tracking coffee shipments',
+      endpoints: {
+        'GET /blockchain': 'Return the full chain, the pending pool and its validity',
+        'POST /transactions': 'Queue a coffee shipment for the next block',
+        'POST /mine': 'Mine every pending transaction into a new block',
+      },
+    });
+  });
+
   app.get('/blockchain', (_req, res) => {
     res.json({
       length: blockchain.chain.length,
