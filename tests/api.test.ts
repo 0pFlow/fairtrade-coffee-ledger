@@ -81,6 +81,13 @@ describe('Coffee ledger API', () => {
       expect(response.status).toBe(400);
     });
 
+    it('rejects a request with no body at all', async () => {
+      const response = await request(app).post('/transactions');
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveLength(4);
+    });
+
     it('does not queue a rejected shipment', async () => {
       await request(app).post('/transactions').send({ sender: 'nobody' });
       const response = await request(app).get('/blockchain');
