@@ -43,6 +43,27 @@ npm run dev          # http://localhost:3000, auto-restarts on save
 
 ## API
 
+### `GET /`
+
+Lists the routes the API serves, so opening the root URL in a browser is informative
+rather than a 404.
+
+```bash
+curl http://localhost:3000/
+```
+
+```json
+{
+  "name": "Fair Trade Coffee Ledger",
+  "description": "Proof-of-Work blockchain ledger for tracking coffee shipments",
+  "endpoints": {
+    "GET /blockchain": "Return the full chain, the pending pool and its validity",
+    "POST /transactions": "Queue a coffee shipment for the next block",
+    "POST /mine": "Mine every pending transaction into a new block"
+  }
+}
+```
+
 ### `GET /blockchain`
 
 Returns the whole chain so anyone can audit a batch's journey.
@@ -213,6 +234,7 @@ implementation followed in the next commit.
 | 3 | Proof-of-Work + env difficulty | [`b150e22`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/b150e22) | [`dd52f29`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/dd52f29) |
 | 4 | `isChainValid` tamper detection | [`a930a7e`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/a930a7e) | [`5c99221`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/5c99221) |
 | 5 | REST API + validation middleware | [`c667b4f`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/c667b4f) | [`1672354`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/1672354) |
+| 6 | API index route | [`0721d63`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/0721d63) | [`3e2600d`](https://github.com/0pFlow/fairtrade-coffee-ledger/commit/3e2600d) |
 
 Each RED commit message records the exact failure, e.g. *"Fails with: TypeError:
 blockchain.isChainValid is not a function"*.
@@ -232,7 +254,7 @@ All files          |     100 |      100 |     100 |     100
   ...ransaction.ts |     100 |      100 |     100 |     100
 ```
 
-64 tests across 4 files. Thresholds are enforced at 80% in `vitest.config.ts`, so the suite
+65 tests across 4 files. Thresholds are enforced at 80% in `vitest.config.ts`, so the suite
 fails if coverage regresses. `server.ts` is excluded — it only binds a port — and `types.ts`
 is excluded because interfaces are erased at runtime and have no executable statements.
 
