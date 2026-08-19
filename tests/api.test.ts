@@ -17,6 +17,18 @@ describe('Coffee ledger API', () => {
     app = createApp();
   });
 
+  describe('GET /', () => {
+    it('returns 200 with the API name and the routes it serves', async () => {
+      const response = await request(app).get('/');
+
+      expect(response.status).toBe(200);
+      expect(response.body.name).toMatch(/coffee ledger/i);
+      expect(Object.keys(response.body.endpoints)).toEqual(
+        expect.arrayContaining(['GET /blockchain', 'POST /transactions', 'POST /mine']),
+      );
+    });
+  });
+
   describe('GET /blockchain', () => {
     it('returns 200 with the chain', async () => {
       const response = await request(app).get('/blockchain');
