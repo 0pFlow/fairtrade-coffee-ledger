@@ -10,8 +10,11 @@ describe('getDifficulty', () => {
     expect(getDifficulty('production')).toBeGreaterThanOrEqual(2);
   });
 
-  it('falls back to the production difficulty when NODE_ENV is unset', () => {
-    expect(getDifficulty(undefined)).toBeGreaterThanOrEqual(2);
+  // Note: passing `undefined` would trigger the parameter default and read the
+  // real process env, so an empty string stands in for "NODE_ENV is not set".
+  it('falls back to the production difficulty outside the test environment', () => {
+    expect(getDifficulty('')).toBeGreaterThanOrEqual(2);
+    expect(getDifficulty('development')).toBeGreaterThanOrEqual(2);
   });
 
   it('reads the running process environment by default', () => {
