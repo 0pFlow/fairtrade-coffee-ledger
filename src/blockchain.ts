@@ -83,4 +83,33 @@ export class Blockchain {
 
     return block;
   }
+
+  /**
+   * Walks the chain from block 1 (genesis has no predecessor to check) and
+   * verifies two things per block:
+   *
+   * 1. its stored hash still matches a fresh recomputation of its contents
+   * 2. its previousHash still matches the real hash of the block before it
+   *
+   * Check 1 catches an edited block. Check 2 catches the smarter attacker who
+   * edits a block and re-hashes it, because doing so breaks the link held by
+   * every block that follows — which is why rewriting history means re-mining
+   * the entire remainder of the chain.
+   */
+  isChainValid(): boolean {
+    for (let i = 1; i < this.chain.length; i += 1) {
+      const currentBlock = this.chain[i]!;
+      const previousBlock = this.chain[i - 1]!;
+
+      if (currentBlock.hash !== calculateHash(currentBlock)) {
+        return false;
+      }
+
+      if (currentBlock.previousHash !== previousBlock.hash) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }

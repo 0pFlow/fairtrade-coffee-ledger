@@ -2,14 +2,16 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Blockchain } from '../src/blockchain.ts';
 import { calculateHash } from '../src/hash.ts';
 import { getDifficulty } from '../src/config.ts';
-import type { Transaction } from '../src/types.ts';
+import type { Block, Transaction } from '../src/types.ts';
 
-const shipment: Transaction = {
+// Frozen: these fixtures are shared by every test, and a tampering test that
+// reached through the chain and mutated one would silently corrupt the others.
+const shipment: Transaction = Object.freeze({
   sender: 'Finca La Esperanza',
   recipient: 'Nordic Roastery',
   batchId: 'BATCH-001',
   weightKg: 60,
-};
+});
 
 describe('Blockchain', () => {
   let blockchain: Blockchain;
@@ -152,11 +154,16 @@ describe('Blockchain', () => {
   });
 
   describe('isChainValid', () => {
-    const secondShipment: Transaction = {
+    const secondShipment: Transaction = Object.freeze({
       sender: 'Nordic Roastery',
       recipient: 'Kafé Stockholm',
       batchId: 'BATCH-002',
       weightKg: 12,
+    });
+
+    /** Rewrites a block's shipment weight the way a fraudster would. */
+    const forgeWeight = (block: Block, weightKg: number): void => {
+      block.transactions = [{ ...block.transactions[0]!, weightKg }];
     };
 
     /** A chain of three blocks: genesis, plus two mined shipments. */
@@ -181,7 +188,7 @@ describe('Blockchain', () => {
 
     it('rejects a chain where a shipment weight was altered', () => {
       const ledger = minedChain();
-      ledger.chain[1]!.transactions[0]!.weightKg = 6000;
+      forgeWeight(ledger.chain[1]!, 6000);
 
       expect(ledger.isChainValid()).toBe(false);
     });
@@ -190,7 +197,7 @@ describe('Blockchain', () => {
       const ledger = minedChain();
       const forged = ledger.chain[1]!;
 
-      forged.transactions[0]!.weightKg = 6000;
+      forgeWeight(forged, 6000);
       forged.hash = calculateHash(forged);
 
       expect(ledger.isChainValid()).toBe(false);
