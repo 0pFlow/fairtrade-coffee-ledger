@@ -150,4 +150,64 @@ describe('Blockchain', () => {
       expect(() => blockchain.minePendingTransactions()).toThrow(/no pending transactions/i);
     });
   });
+
+  describe('isChainValid', () => {
+    const secondShipment: Transaction = {
+      sender: 'Nordic Roastery',
+      recipient: 'Kafé Stockholm',
+      batchId: 'BATCH-002',
+      weightKg: 12,
+    };
+
+    /** A chain of three blocks: genesis, plus two mined shipments. */
+    const minedChain = (): Blockchain => {
+      const ledger = new Blockchain();
+
+      ledger.addTransaction(shipment);
+      ledger.minePendingTransactions();
+      ledger.addTransaction(secondShipment);
+      ledger.minePendingTransactions();
+
+      return ledger;
+    };
+
+    it('accepts a chain that holds only the genesis block', () => {
+      expect(blockchain.isChainValid()).toBe(true);
+    });
+
+    it('accepts an untouched chain of mined blocks', () => {
+      expect(minedChain().isChainValid()).toBe(true);
+    });
+
+    it('rejects a chain where a shipment weight was altered', () => {
+      const ledger = minedChain();
+      ledger.chain[1]!.transactions[0]!.weightKg = 6000;
+
+      expect(ledger.isChainValid()).toBe(false);
+    });
+
+    it('rejects a forgery even when the attacker re-hashes the block they edited', () => {
+      const ledger = minedChain();
+      const forged = ledger.chain[1]!;
+
+      forged.transactions[0]!.weightKg = 6000;
+      forged.hash = calculateHash(forged);
+
+      expect(ledger.isChainValid()).toBe(false);
+    });
+
+    it('rejects a chain whose previousHash link was rewritten', () => {
+      const ledger = minedChain();
+      ledger.chain[2]!.previousHash = '0'.repeat(64);
+
+      expect(ledger.isChainValid()).toBe(false);
+    });
+
+    it('rejects a chain with a block removed from the middle', () => {
+      const ledger = minedChain();
+      ledger.chain = [ledger.chain[0]!, ledger.chain[2]!];
+
+      expect(ledger.isChainValid()).toBe(false);
+    });
+  });
 });

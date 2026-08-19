@@ -39,4 +39,9 @@ describe('calculateHash', () => {
     const tampered = [{ ...transactions[0]!, weightKg: 6000 }];
     expect(calculateHash({ ...block, transactions: tampered })).not.toBe(calculateHash(block));
   });
+
+  it('ignores an existing hash field, so a stored block can be re-verified', () => {
+    const alreadyHashed = { ...block, hash: 'deadbeef'.repeat(8) };
+    expect(calculateHash(alreadyHashed)).toBe(calculateHash(block));
+  });
 });
