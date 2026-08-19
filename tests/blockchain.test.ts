@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Blockchain } from '../src/blockchain.ts';
 import { calculateHash } from '../src/hash.ts';
+import { getDifficulty } from '../src/config.ts';
 import type { Transaction } from '../src/types.ts';
 
 const shipment: Transaction = {
@@ -77,6 +78,76 @@ describe('Blockchain', () => {
 
     it('returns the index of the block the transaction will be mined into', () => {
       expect(blockchain.addTransaction(shipment)).toBe(1);
+    });
+  });
+
+  describe('difficulty', () => {
+    it('takes its difficulty from the environment configuration', () => {
+      expect(blockchain.difficulty).toBe(getDifficulty());
+    });
+
+    it('accepts an explicit difficulty, so tests can exercise a harder target', () => {
+      expect(new Blockchain(2).difficulty).toBe(2);
+    });
+  });
+
+  describe('minePendingTransactions', () => {
+    beforeEach(() => {
+      blockchain.addTransaction(shipment);
+    });
+
+    it('appends exactly one block to the chain', () => {
+      blockchain.minePendingTransactions();
+      expect(blockchain.chain).toHaveLength(2);
+    });
+
+    it('returns the block it just mined', () => {
+      expect(blockchain.minePendingTransactions()).toBe(blockchain.getLatestBlock());
+    });
+
+    it('moves the pending transactions into the block', () => {
+      expect(blockchain.minePendingTransactions().transactions).toEqual([shipment]);
+    });
+
+    it('empties the pending pool once mined', () => {
+      blockchain.minePendingTransactions();
+      expect(blockchain.pendingTransactions).toEqual([]);
+    });
+
+    it('numbers the block one after its predecessor', () => {
+      expect(blockchain.minePendingTransactions().index).toBe(1);
+    });
+
+    it('links the block to the hash of its predecessor', () => {
+      const previousHash = blockchain.getLatestBlock().hash;
+      expect(blockchain.minePendingTransactions().previousHash).toBe(previousHash);
+    });
+
+    it('finds a hash with the required number of leading zeros', () => {
+      const block = blockchain.minePendingTransactions();
+      expect(block.hash.startsWith('0'.repeat(blockchain.difficulty))).toBe(true);
+    });
+
+    it('keeps searching until a harder target is satisfied', () => {
+      const harder = new Blockchain(2);
+      harder.addTransaction(shipment);
+      expect(harder.minePendingTransactions().hash.startsWith('00')).toBe(true);
+    });
+
+    it('records the nonce it stopped at', () => {
+      const { nonce } = blockchain.minePendingTransactions();
+      expect(Number.isInteger(nonce)).toBe(true);
+      expect(nonce).toBeGreaterThanOrEqual(0);
+    });
+
+    it('stores a hash that still matches when recomputed from the block', () => {
+      const block = blockchain.minePendingTransactions();
+      expect(block.hash).toBe(calculateHash(block));
+    });
+
+    it('refuses to mine an empty pool, so no empty blocks enter the ledger', () => {
+      blockchain.minePendingTransactions();
+      expect(() => blockchain.minePendingTransactions()).toThrow(/no pending transactions/i);
     });
   });
 });
